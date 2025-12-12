@@ -1,8 +1,9 @@
-import * as THREE from './Three JS/three.js-r145-compressed/build/three.module.js';
-import { OrbitControls } from './Three JS/three.js-r145-compressed/examples/jsm/controls/OrbitControls.js';
-import { GLTFLoader } from './Three JS/three.js-r145-compressed/examples/jsm/loaders/GLTFLoader.js';
-import { FontLoader } from './Three JS/three.js-r145-compressed/examples/jsm/loaders/FontLoader.js';
-import { TextGeometry } from './Three JS/three.js-r145-compressed/examples/jsm/geometries/TextGeometry.js';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+
 
 const scene = new THREE.Scene();
 
@@ -310,7 +311,7 @@ function onHamsterClick(event) {
 function createSceneText() {
     const loader = new FontLoader();
     loader.load(
-        './Three JS/examples/fonts/helvetiker_bold.typeface.json',
+        'https://threejs.org/examples/fonts/helvetiker_bold.typeface.json',
         (font) => {
             const textGeometry = new TextGeometry('OVerlord', {
                 font: font,
@@ -339,21 +340,44 @@ function createSceneText() {
 }
 
 function createSkybox() {
-    const loader = new THREE.CubeTextureLoader();
+    const textureLoader = new THREE.TextureLoader();
+    
+    const materialArray = [];
     const textureUrls = [
-        'assets/skybox/side-3.png',
-        'assets/skybox/side-4.png',
-        'assets/skybox/top.png',
-        'assets/skybox/bottom.png',
-        'assets/skybox/side-1.png',
-        'assets/skybox/side-2.png'
+        './assets/skybox/side-3.png',  // right
+        './assets/skybox/side-4.png',  // left
+        './assets/skybox/top.png',     // top
+        './assets/skybox/bottom.png',  // bottom
+        './assets/skybox/side-1.png',  // front
+        './assets/skybox/side-2.png'   // back
     ];
-
-    const cubeTexture = loader.load(textureUrls);
-    cubeTexture.encoding = THREE.sRGBEncoding;
-
-    scene.background = cubeTexture;
-    scene.environment = cubeTexture;
+    
+    let loadedCount = 0;
+    
+    textureUrls.forEach((url, index) => {
+        textureLoader.load(
+            url,
+            (texture) => {
+                texture.encoding = THREE.sRGBEncoding;
+                materialArray[index] = new THREE.MeshBasicMaterial({ 
+                    map: texture,
+                    side: THREE.BackSide  // Shows texture on inside of box
+                });
+                
+                loadedCount++;
+                if (loadedCount === 6) {
+                    const skyboxGeo = new THREE.BoxGeometry(500, 500, 500);
+                    const skybox = new THREE.Mesh(skyboxGeo, materialArray);
+                    scene.add(skybox);
+                    console.log('✓ Skybox created successfully!');
+                }
+            },
+            undefined,
+            (error) => {
+                console.error(`Failed to load ${url}:`, error);
+            }
+        );
+    });
 }
 
 function toggleSpell() {
